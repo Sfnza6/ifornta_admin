@@ -30,7 +30,7 @@ class MostOrderedList extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 6),
-          ...items.map(_row).toList(),
+          ...items.map(_row),
           const SizedBox(height: 8),
           TextButton(onPressed: () {}, child: const Text('عرض المزيد')),
         ],

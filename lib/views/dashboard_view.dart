@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-
 import 'package:iforenta_admin_2/views/widgets/bottom_nav.dart';
 import 'package:iforenta_admin_2/views/widgets/header_bar.dart';
 import 'package:iforenta_admin_2/views/widgets/most_ordered_list.dart';
@@ -9,6 +8,8 @@ import 'package:iforenta_admin_2/views/widgets/side_overlay_menu.dart';
 import 'package:iforenta_admin_2/views/widgets/stat_card.dart';
 
 import '../../controllers/dashboard_controller.dart';
+
+// Widgets مشتركة
 
 class DashboardView extends GetView<DashboardController> {
   const DashboardView({super.key});
@@ -22,38 +23,85 @@ class DashboardView extends GetView<DashboardController> {
       child: Scaffold(
         body: SafeArea(
           child: ListView(
-            padding: EdgeInsets.fromLTRB(16, 8, 16, pad.bottom + 16),
+            padding: EdgeInsets.fromLTRB(16, 0, 16, pad.bottom + 16),
             children: [
+              // الشريط العلوي (مطابق للصورة)
               const HeaderBar(),
               const SizedBox(height: 12),
 
-              // إحصائيات
+              // بطاقات الإحصائيات من الـ API
               Obx(() {
-                // اقرأ RxList مباشرة داخل الـbuilder
+                final loading = controller.loadingStats.value;
+                final s = controller.stats.value;
+
                 final cardWidth =
                     (MediaQuery.of(context).size.width - 16 * 2 - 12) / 2;
-                final stats = controller.stats; // RxList
-                return Wrap(
-                  spacing: 12,
-                  runSpacing: 12,
-                  children: List.generate(stats.length, (i) {
-                    final s = stats[i];
-                    return SizedBox(
-                      width: cardWidth,
-                      child: StatCard(title: s.$1, value: s.$2),
-                    );
-                  }),
+
+                if (loading && s == null) {
+                  // هيكل تحميل بسيط
+                  return Wrap(
+                    spacing: 12,
+                    runSpacing: 12,
+                    children: List.generate(
+                      4,
+                      (_) => Container(
+                        width: cardWidth,
+                        height: 92,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFEFE6DF),
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                    ),
+                  );
+                }
+
+                final tiles = [
+                  (
+                    'عدد السائقين',
+                    '${s?.drivers ?? 0}',
+                    Icons.delivery_dining_outlined,
+                  ),
+                  (
+                    'عدد الأصناف',
+                    '${s?.items ?? 0}',
+                    Icons.lunch_dining_outlined,
+                  ),
+                  (
+                    'إجمالي الطلبات',
+                    '${s?.orders ?? 0}',
+                    Icons.receipt_long_outlined,
+                  ),
+                  (
+                    'إجمالي العملاء',
+                    '${s?.customers ?? 0}',
+                    Icons.group_outlined,
+                  ),
+                ];
+
+                return RefreshIndicator(
+                  onRefresh: controller.fetchStats,
+                  child: Wrap(
+                    spacing: 12,
+                    runSpacing: 12,
+                    children: List.generate(tiles.length, (i) {
+                      final t = tiles[i];
+                      return SizedBox(
+                        width: cardWidth,
+                        child: StatCard(title: t.$1, value: t.$2, icon: t.$3),
+                      );
+                    }),
+                  ),
                 );
               }),
 
               const SizedBox(height: 16),
 
-              // الأكثر طلباً
+              // الأكثر طلبًا (تقدر تربطه لاحقًا بendpoint إن حبيت)
               Obx(() {
-                final p = controller.period.value; // RxInt
-                final items = controller.mostOrdered.toList(); // RxList -> List
+                final items = controller.mostOrdered.toList();
                 return MostOrderedList(
-                  period: p,
+                  period: controller.period.value,
                   onChange: (i) => controller.period.value = i,
                   items: items,
                 );
@@ -61,20 +109,17 @@ class DashboardView extends GetView<DashboardController> {
 
               const SizedBox(height: 16),
 
-              // التقييمات
-              Obx(() {
-                final reviews = controller.reviews.toList(); // RxList -> List
-                return ReviewsCarousel(reviews: reviews);
-              }),
+              // تقييمات العملاء (مافيش جدول تقييمات عندكم؛ خليّناها اختيارية)
+              Obx(() => ReviewsCarousel(reviews: controller.reviews.toList())),
             ],
           ),
         ),
 
         // الشريط السفلي
         bottomNavigationBar: BottomNav(
-          currentIndex: 0, // ← أنت الآن في لوحة التحكم
+          currentIndex: 0, // اليسار = لوحة التحكم
           onOpenMenu: (ctx) => showSideOverlayMenu(ctx),
-          onMiddle: () {}, // اختياري
+          onMiddle: () {},
         ),
       ),
     );

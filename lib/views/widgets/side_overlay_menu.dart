@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import '../../../../core/routes/app_routes.dart'; // <-- مهم
+import '../../../../core/routes/app_routes.dart';
 
 const _brown = Color(0xFF6F3F17);
 
@@ -14,7 +14,7 @@ Future<void> showSideOverlayMenu(BuildContext context) {
     pageBuilder: (_, __, ___) => const SizedBox.shrink(),
     transitionBuilder: (ctx, anim, _, __) {
       final offset = Tween<Offset>(
-        begin: const Offset(1, 0),
+        begin: const Offset(1, 0), // يبدأ من اليمين
         end: Offset.zero,
       ).animate(CurvedAnimation(parent: anim, curve: Curves.easeOutCubic));
 
@@ -30,55 +30,57 @@ Future<void> showSideOverlayMenu(BuildContext context) {
                 width: MediaQuery.of(ctx).size.width * 0.75,
                 height: double.infinity,
                 color: Colors.white,
-                child: ListView(
-                  padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
+                child: Stack(
                   children: [
-                    const SizedBox(height: 8),
-
-                    // ✅ افتح صفحة الطلبات
-                    _MenuItem(
-                      title: 'الطلبات',
-                      icon: Icons.receipt_long_outlined,
-                      onTap: () {
-                        Get.back(); // اغلاق اللوح
-                        Get.toNamed(Routes.orders); // الذهاب للطلبات
-                      },
-                    ),
-
-                    const SizedBox(height: 4),
-
-                    _ExpansionMenu(
-                      title: 'قائمة الطعام',
-                      icon: Icons.restaurant_menu,
+                    ListView(
+                      padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
                       children: [
-                        _SubItem(
-                          title: 'الأصناف',
-                          icon: Icons.lunch_dining_outlined,
-                          onTap: () {
+                        const SizedBox(height: 50),
+
+                        // الطلبات
+                        _MenuItem(
+                          title: 'الطلبات',
+                          icon: Icons.receipt_long_outlined,
+                          onTap: () async {
                             Get.back();
-                            Get.toNamed(Routes.categories);
+                            await Future.delayed(
+                              const Duration(milliseconds: 80),
+                            );
+                            Get.toNamed(Routes.orders);
                           },
                         ),
-                        _SubItem(
-                          title: 'العروض',
-                          icon: Icons.local_offer_outlined,
-                          onTap: () {
-                            Get.back();
-                            Get.toNamed(Routes.offers);
-                          },
-                        ),
+                        const SizedBox(height: 4),
+
+                        // قائمة الطعام (منسدلة)
+                        const _FoodMenuExpansion(),
+
+                        const SizedBox(height: 4),
+
+                        // الزبائن (مثال — ضيف له route لاحقًا)
                       ],
                     ),
 
-                    const SizedBox(height: 4),
-
-                    _MenuItem(
-                      title: 'الزبائن',
-                      icon: Icons.people_alt_outlined,
-                      onTap: () {
-                        // أضف route لاحقًا
-                        Get.back();
-                      },
+                    // زر إغلاق دائري أعلى اليسار
+                    Positioned(
+                      top: 14,
+                      left: 12,
+                      child: InkWell(
+                        onTap: () => Get.back(),
+                        borderRadius: BorderRadius.circular(22),
+                        child: Container(
+                          width: 36,
+                          height: 36,
+                          decoration: const BoxDecoration(
+                            color: _brown,
+                            shape: BoxShape.circle,
+                          ),
+                          alignment: Alignment.center,
+                          child: const Icon(
+                            Icons.chevron_right,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -90,6 +92,8 @@ Future<void> showSideOverlayMenu(BuildContext context) {
     },
   );
 }
+
+/* --------------------------- Widgets داخلية --------------------------- */
 
 class _MenuItem extends StatelessWidget {
   final String title;
@@ -120,21 +124,14 @@ class _MenuItem extends StatelessWidget {
   }
 }
 
-class _ExpansionMenu extends StatefulWidget {
-  final String title;
-  final IconData icon;
-  final List<Widget> children;
-  const _ExpansionMenu({
-    required this.title,
-    required this.icon,
-    required this.children,
-  });
+class _FoodMenuExpansion extends StatefulWidget {
+  const _FoodMenuExpansion();
 
   @override
-  State<_ExpansionMenu> createState() => _ExpansionMenuState();
+  State<_FoodMenuExpansion> createState() => _FoodMenuExpansionState();
 }
 
-class _ExpansionMenuState extends State<_ExpansionMenu> {
+class _FoodMenuExpansionState extends State<_FoodMenuExpansion> {
   bool _open = true;
 
   @override
@@ -144,14 +141,14 @@ class _ExpansionMenuState extends State<_ExpansionMenu> {
         ListTile(
           onTap: () => setState(() => _open = !_open),
           contentPadding: EdgeInsets.zero,
-          leading: Icon(widget.icon, color: _brown),
+          leading: const Icon(Icons.restaurant_menu, color: _brown),
           trailing: Icon(
             _open ? Icons.expand_less : Icons.expand_more,
             color: _brown,
           ),
-          title: Text(
-            widget.title,
-            style: const TextStyle(
+          title: const Text(
+            'قائمة الطعام',
+            style: TextStyle(
               color: _brown,
               fontSize: 16,
               fontWeight: FontWeight.w800,
@@ -162,7 +159,40 @@ class _ExpansionMenuState extends State<_ExpansionMenu> {
           firstChild: const SizedBox.shrink(),
           secondChild: Padding(
             padding: const EdgeInsetsDirectional.only(start: 12, end: 12),
-            child: Column(children: widget.children),
+            child: Column(
+              children: [
+                // الأصناف
+                _SubItem(
+                  title: 'الأصناف',
+                  icon: Icons.lunch_dining_outlined,
+                  onTap: () async {
+                    Get.back();
+                    await Future.delayed(const Duration(milliseconds: 80));
+                    Get.toNamed(Routes.items);
+                  },
+                ),
+                // ✅ الأقسام
+                _SubItem(
+                  title: 'الأقسام',
+                  icon: Icons.folder_open_outlined,
+                  onTap: () async {
+                    Get.back();
+                    await Future.delayed(const Duration(milliseconds: 80));
+                    Get.toNamed(Routes.categories);
+                  },
+                ),
+                // العروض
+                _SubItem(
+                  title: 'العروض',
+                  icon: Icons.local_offer_outlined,
+                  onTap: () async {
+                    Get.back();
+                    await Future.delayed(const Duration(milliseconds: 80));
+                    Get.toNamed(Routes.offers);
+                  },
+                ),
+              ],
+            ),
           ),
           crossFadeState: _open
               ? CrossFadeState.showSecond

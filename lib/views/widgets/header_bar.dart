@@ -1,85 +1,147 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:iforenta_admin_2/controllers/AuthController.dart';
+import '../../../../core/routes/app_routes.dart';
 
 class HeaderBar extends StatelessWidget {
   const HeaderBar({super.key});
 
-  static const brown = Color(0xFF6F3F17);
+  static const _brown = Color(0xFF6F3F17);
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        _circleIcon(Icons.notifications),
-        const SizedBox(width: 8),
-        _circleIcon(Icons.mail_outline),
-        const Spacer(),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+    final auth = Get.find<AuthController>();
+
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: Container(
+        margin: const EdgeInsets.only(top: 10, bottom: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        child: Container(
+          padding: const EdgeInsetsDirectional.fromSTEB(14, 10, 14, 10),
           decoration: BoxDecoration(
-            color: brown,
-            borderRadius: BorderRadius.circular(12),
+            color: _brown,
+            borderRadius: BorderRadius.circular(24),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(.08),
-                blurRadius: 10,
-                offset: const Offset(0, 6),
+                color: Colors.black.withOpacity(.15),
+                blurRadius: 16,
+                offset: const Offset(0, 8),
               ),
             ],
           ),
-          child: Row(
-            children: const [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    'عبدالرحمن',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w700,
-                      height: 1,
+          child: Obx(() {
+            final user = auth.admin.value;
+
+            final displayName = user?.name ?? '—'; // ✅ هنا الاسم
+            final role = user?.role.isNotEmpty == true ? user!.role : 'admin';
+            final avatarUrl = user?.avatarUrl ?? '';
+
+            return Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                // صورة البروفايل
+                GestureDetector(
+                  onTap: () => Get.toNamed(Routes.profile),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 2.2),
                     ),
+                    child: ClipOval(child: _Avatar(url: avatarUrl)),
                   ),
-                  SizedBox(height: 2),
-                  Text(
-                    'أدمن • مطعم إيفورنتا',
-                    style: TextStyle(
-                      color: Color(0xFFFFF3E7),
-                      fontSize: 11,
-                      height: 1,
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(width: 10),
-              CircleAvatar(
-                radius: 18,
-                backgroundImage: NetworkImage(
-                  'https://i.pravatar.cc/100?img=12',
                 ),
-              ),
-            ],
-          ),
+                const SizedBox(width: 12),
+
+                // النصوص
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        displayName, // ✅ يعرض اسم الأدمن
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.right,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 16,
+                          height: 1.1,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        role,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.right,
+                        style: const TextStyle(
+                          color: Color(0xFFFFEBD8),
+                          fontSize: 11.5,
+                          height: 1.1,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(width: 12),
+
+                _iconButton(Icons.mail_outline_rounded),
+                const SizedBox(width: 8),
+                _iconButton(Icons.notifications_none_rounded),
+              ],
+            );
+          }),
         ),
-      ],
+      ),
     );
   }
 
-  static Widget _circleIcon(IconData icon) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        shape: BoxShape.circle,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(.05),
-            blurRadius: 10,
-            offset: const Offset(0, 6),
-          ),
-        ],
+  static Widget _iconButton(IconData icon) {
+    return SizedBox(
+      width: 36,
+      height: 36,
+      child: Material(
+        color: Colors.white.withOpacity(.15),
+        borderRadius: BorderRadius.circular(12),
+        child: InkWell(
+          onTap: () {},
+          borderRadius: BorderRadius.circular(12),
+          child: Icon(icon, color: Colors.white, size: 20),
+        ),
       ),
-      child: IconButton(
-        icon: Icon(icon, size: 20, color: brown),
-        onPressed: () {},
+    );
+  }
+}
+
+class _Avatar extends StatelessWidget {
+  const _Avatar({required this.url});
+  final String url;
+
+  @override
+  Widget build(BuildContext context) {
+    if (url.isEmpty) {
+      return Container(
+        width: 40,
+        height: 40,
+        color: Colors.white,
+        alignment: Alignment.center,
+        child: const Icon(Icons.person, color: HeaderBar._brown),
+      );
+    }
+    return Image.network(
+      url,
+      width: 40,
+      height: 40,
+      fit: BoxFit.cover,
+      errorBuilder: (_, __, ___) => Container(
+        width: 40,
+        height: 40,
+        color: Colors.white,
+        alignment: Alignment.center,
+        child: const Icon(Icons.person, color: HeaderBar._brown),
       ),
     );
   }
